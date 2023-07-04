@@ -1,7 +1,7 @@
 package httpecho
 
 import (
-	"online-store/internal/controller"
+	"github.com/Meystergod/online-store/internal/controller"
 
 	"github.com/labstack/echo/v4"
 )

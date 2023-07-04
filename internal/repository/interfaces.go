@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"online-store/internal/domain/model"
+	"github.com/Meystergod/online-store/internal/domain/model"
 )
 
 type ProductRepository interface {

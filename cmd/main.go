@@ -2,17 +2,17 @@ package main
 
 import (
 	"context"
-	"online-store/internal/utils"
 	"time"
 
-	"online-store/internal/config"
-	"online-store/internal/controller"
-	"online-store/internal/delivery/http/httpecho"
-	"online-store/internal/repository/mongo"
-	"online-store/pkg/client"
-	"online-store/pkg/httpserver"
-	"online-store/pkg/logging"
-	"online-store/pkg/ossignal"
+	"github.com/Meystergod/online-store/internal/config"
+	"github.com/Meystergod/online-store/internal/controller"
+	"github.com/Meystergod/online-store/internal/delivery/http/httpecho"
+	"github.com/Meystergod/online-store/internal/repository/mongo"
+	"github.com/Meystergod/online-store/internal/utils"
+	"github.com/Meystergod/online-store/pkg/client"
+	"github.com/Meystergod/online-store/pkg/httpserver"
+	"github.com/Meystergod/online-store/pkg/logging"
+	"github.com/Meystergod/online-store/pkg/ossignal"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"

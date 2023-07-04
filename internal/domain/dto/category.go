@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"online-store/internal/domain/model"
+	"github.com/Meystergod/online-store/internal/domain/model"
 )
 
 type CreateCategory struct {

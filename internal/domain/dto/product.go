@@ -1,6 +1,6 @@
 package dto
 
-import "online-store/internal/domain/model"
+import "github.com/Meystergod/online-store/internal/domain/model"
 
 type CreateProduct struct {
 	Title       string         `json:"title" bson:"title" validate:"required"`

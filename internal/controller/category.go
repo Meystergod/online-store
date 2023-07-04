@@ -3,9 +3,9 @@ package controller
 import (
 	"net/http"
 
-	"online-store/internal/domain/dto"
-	"online-store/internal/repository"
-	"online-store/internal/utils"
+	"github.com/Meystergod/online-store/internal/domain/dto"
+	"github.com/Meystergod/online-store/internal/repository"
+	"github.com/Meystergod/online-store/internal/utils"
 
 	"github.com/labstack/echo/v4"
 )

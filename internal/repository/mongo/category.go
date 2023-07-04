@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"online-store/internal/domain/model"
-	"online-store/internal/repository"
-	"online-store/internal/utils"
+	"github.com/Meystergod/online-store/internal/domain/model"
+	"github.com/Meystergod/online-store/internal/repository"
+	"github.com/Meystergod/online-store/internal/utils"
 
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"

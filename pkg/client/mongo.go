@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"online-store/internal/utils"
+	"github.com/Meystergod/online-store/internal/utils"
 
 	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/mongo"
