@@ -1,4 +1,4 @@
-module github.com/Meystergod/github.com/Meystergod/online-store
+module github.com/Meystergod/online-store
 
 go 1.20
 
