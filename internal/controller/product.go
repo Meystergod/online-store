@@ -25,6 +25,11 @@ func (productController *ProductController) CreateProduct(c echo.Context) error 
 		return utils.Negotiate(c, http.StatusBadRequest, utils.ErrorBindAndValidatePayload.Error())
 	}
 
+	_, err := productController.productRepository.GetProductByTitle(c.Request().Context(), payload.Title)
+	if err == nil {
+		return utils.Negotiate(c, http.StatusConflict, "product with this title is exist")
+	}
+
 	createdProductID, err := productController.productRepository.CreateProduct(c.Request().Context(), payload.ToModel())
 	if err != nil {
 		return utils.Negotiate(c, http.StatusInternalServerError, err.Error())

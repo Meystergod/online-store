@@ -33,22 +33,39 @@ func (discountRepository *discountRepository) GetDiscount(ctx context.Context, u
 
 	oid, err := primitive.ObjectIDFromHex(uuid)
 	if err != nil {
-		return discount, errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return discount, errors.Wrap(err, utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	result := discountRepository.collection.FindOne(ctx, filter)
 	if result.Err() != nil {
-		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return discount, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
-		}
-
-		return discount, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return discount, errors.Wrap(result.Err(), utils.ErrorExecuteQuery.Error())
 	}
 
 	if err = result.Decode(&discount); err != nil {
-		return discount, errors.Wrap(utils.ErrorDecode, err.Error())
+		return discount, errors.Wrap(err, utils.ErrorDecode.Error())
+	}
+
+	return discount, nil
+}
+
+func (discountRepository *discountRepository) GetDiscountByTitle(ctx context.Context, title string) (*model.Discount, error) {
+	var discount *model.Discount
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+
+	defer cancel()
+
+	filter := bson.M{"title": title}
+
+	result := discountRepository.collection.FindOne(ctx, filter)
+	if result.Err() != nil {
+		return discount, errors.Wrap(result.Err(), utils.ErrorExecuteQuery.Error())
+	}
+
+	if err := result.Decode(&discount); err != nil {
+		return discount, errors.Wrap(err, utils.ErrorDecode.Error())
 	}
 
 	return discount, nil
@@ -61,11 +78,11 @@ func (discountRepository *discountRepository) GetAllDiscounts(ctx context.Contex
 
 	cursor, err := discountRepository.collection.Find(ctx, filter)
 	if err != nil {
-		return &discounts, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return &discounts, errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if err = cursor.All(ctx, &discounts); err != nil {
-		return &discounts, errors.Wrap(utils.ErrorDecode, err.Error())
+		return &discounts, errors.Wrap(err, utils.ErrorDecode.Error())
 	}
 
 	return &discounts, nil
@@ -78,15 +95,15 @@ func (discountRepository *discountRepository) CreateDiscount(ctx context.Context
 
 	result, err := discountRepository.collection.InsertOne(ctx, discount)
 	if err != nil {
-		return utils.EmptyString, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return utils.EmptyString, errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	oid, ok := result.InsertedID.(primitive.ObjectID)
-	if ok {
-		return oid.Hex(), nil
+	if !ok {
+		return utils.EmptyString, errors.Wrap(errors.New("error convert hex to oid"), utils.ErrorConvert.Error())
 	}
 
-	return utils.EmptyString, errors.Wrap(utils.ErrorConvert, "error convert oid to hex")
+	return oid.Hex(), nil
 }
 
 func (discountRepository *discountRepository) UpdateDiscount(ctx context.Context, discount *model.Discount) error {
@@ -96,21 +113,21 @@ func (discountRepository *discountRepository) UpdateDiscount(ctx context.Context
 
 	oid, err := primitive.ObjectIDFromHex(discount.ID)
 	if err != nil {
-		return errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return errors.Wrap(err, utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	discountByte, err := bson.Marshal(discount)
 	if err != nil {
-		return errors.Wrap(utils.ErrorMarshal, err.Error())
+		return errors.Wrap(err, utils.ErrorMarshal.Error())
 	}
 
 	var object bson.M
 
 	err = bson.Unmarshal(discountByte, &object)
 	if err != nil {
-		return errors.Wrap(utils.ErrorUnmarshal, err.Error())
+		return errors.Wrap(err, utils.ErrorUnmarshal.Error())
 	}
 
 	delete(object, "_id")
@@ -121,11 +138,11 @@ func (discountRepository *discountRepository) UpdateDiscount(ctx context.Context
 
 	result, err := discountRepository.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if result.MatchedCount == 0 {
-		return errors.Wrap(utils.ErrorExecuteQuery, "not found")
+		return errors.Wrap(errors.New("not found"), utils.ErrorExecuteQuery.Error())
 	}
 
 	return nil
@@ -138,18 +155,18 @@ func (discountRepository *discountRepository) DeleteDiscount(ctx context.Context
 
 	oid, err := primitive.ObjectIDFromHex(uuid)
 	if err != nil {
-		return errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return errors.Wrap(errors.New("error convert hex to oid"), utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	result, err := discountRepository.collection.DeleteOne(ctx, filter)
 	if err != nil {
-		return errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if result.DeletedCount == 0 {
-		return errors.Wrap(utils.ErrorExecuteQuery, "not found")
+		return errors.Wrap(errors.New("not found"), utils.ErrorExecuteQuery.Error())
 	}
 
 	return nil

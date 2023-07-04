@@ -33,22 +33,39 @@ func (tagRepository *tagRepository) GetTag(ctx context.Context, uuid string) (*m
 
 	oid, err := primitive.ObjectIDFromHex(uuid)
 	if err != nil {
-		return tag, errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return tag, errors.Wrap(err, utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	result := tagRepository.collection.FindOne(ctx, filter)
 	if result.Err() != nil {
-		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return tag, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
-		}
-
-		return tag, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return tag, errors.Wrap(result.Err(), utils.ErrorExecuteQuery.Error())
 	}
 
 	if err = result.Decode(&tag); err != nil {
-		return tag, errors.Wrap(utils.ErrorDecode, err.Error())
+		return tag, errors.Wrap(err, utils.ErrorDecode.Error())
+	}
+
+	return tag, nil
+}
+
+func (tagRepository *tagRepository) GetTagByTitle(ctx context.Context, title string) (*model.Tag, error) {
+	var tag *model.Tag
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+
+	defer cancel()
+
+	filter := bson.M{"title": title}
+
+	result := tagRepository.collection.FindOne(ctx, filter)
+	if result.Err() != nil {
+		return tag, errors.Wrap(result.Err(), utils.ErrorExecuteQuery.Error())
+	}
+
+	if err := result.Decode(&tag); err != nil {
+		return tag, errors.Wrap(err, utils.ErrorDecode.Error())
 	}
 
 	return tag, nil
@@ -61,11 +78,11 @@ func (tagRepository *tagRepository) GetAllTags(ctx context.Context) (*[]model.Ta
 
 	cursor, err := tagRepository.collection.Find(ctx, filter)
 	if err != nil {
-		return &tags, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return &tags, errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if err = cursor.All(ctx, &tags); err != nil {
-		return &tags, errors.Wrap(utils.ErrorDecode, err.Error())
+		return &tags, errors.Wrap(err, utils.ErrorDecode.Error())
 	}
 
 	return &tags, nil
@@ -78,15 +95,15 @@ func (tagRepository *tagRepository) CreateTag(ctx context.Context, tag *model.Ta
 
 	result, err := tagRepository.collection.InsertOne(ctx, tag)
 	if err != nil {
-		return utils.EmptyString, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return utils.EmptyString, errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	oid, ok := result.InsertedID.(primitive.ObjectID)
-	if ok {
-		return oid.Hex(), nil
+	if !ok {
+		return utils.EmptyString, errors.Wrap(errors.New("error convert hex to oid"), utils.ErrorConvert.Error())
 	}
 
-	return utils.EmptyString, errors.Wrap(utils.ErrorConvert, "error convert oid to hex")
+	return oid.Hex(), nil
 }
 
 func (tagRepository *tagRepository) UpdateTag(ctx context.Context, tag *model.Tag) error {
@@ -96,21 +113,21 @@ func (tagRepository *tagRepository) UpdateTag(ctx context.Context, tag *model.Ta
 
 	oid, err := primitive.ObjectIDFromHex(tag.ID)
 	if err != nil {
-		return errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return errors.Wrap(err, utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	tagByte, err := bson.Marshal(tag)
 	if err != nil {
-		return errors.Wrap(utils.ErrorMarshal, err.Error())
+		return errors.Wrap(err, utils.ErrorMarshal.Error())
 	}
 
 	var object bson.M
 
 	err = bson.Unmarshal(tagByte, &object)
 	if err != nil {
-		return errors.Wrap(utils.ErrorUnmarshal, err.Error())
+		return errors.Wrap(err, utils.ErrorUnmarshal.Error())
 	}
 
 	delete(object, "_id")
@@ -121,11 +138,11 @@ func (tagRepository *tagRepository) UpdateTag(ctx context.Context, tag *model.Ta
 
 	result, err := tagRepository.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if result.MatchedCount == 0 {
-		return errors.Wrap(utils.ErrorExecuteQuery, "not found")
+		return errors.Wrap(errors.New("not found"), utils.ErrorExecuteQuery.Error())
 	}
 
 	return nil
@@ -138,18 +155,18 @@ func (tagRepository *tagRepository) DeleteTag(ctx context.Context, uuid string) 
 
 	oid, err := primitive.ObjectIDFromHex(uuid)
 	if err != nil {
-		return errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return errors.Wrap(errors.New("error convert hex to oid"), utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	result, err := tagRepository.collection.DeleteOne(ctx, filter)
 	if err != nil {
-		return errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if result.DeletedCount == 0 {
-		return errors.Wrap(utils.ErrorExecuteQuery, "not found")
+		return errors.Wrap(errors.New("not found"), utils.ErrorExecuteQuery.Error())
 	}
 
 	return nil

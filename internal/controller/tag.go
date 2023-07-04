@@ -25,6 +25,11 @@ func (tagController *TagController) CreateTag(c echo.Context) error {
 		return utils.Negotiate(c, http.StatusBadRequest, utils.ErrorBindAndValidatePayload.Error())
 	}
 
+	_, err := tagController.tagRepository.GetTagByTitle(c.Request().Context(), payload.Title)
+	if err == nil {
+		return utils.Negotiate(c, http.StatusConflict, "tag with this title is exist")
+	}
+
 	createdTagID, err := tagController.tagRepository.CreateTag(c.Request().Context(), payload.ToModel())
 	if err != nil {
 		return utils.Negotiate(c, http.StatusInternalServerError, err.Error())

@@ -33,22 +33,39 @@ func (categoryRepository *categoryRepository) GetCategory(ctx context.Context, u
 
 	oid, err := primitive.ObjectIDFromHex(uuid)
 	if err != nil {
-		return category, errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return category, errors.Wrap(err, utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	result := categoryRepository.collection.FindOne(ctx, filter)
 	if result.Err() != nil {
-		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return category, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
-		}
-
-		return category, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return category, errors.Wrap(result.Err(), utils.ErrorExecuteQuery.Error())
 	}
 
 	if err = result.Decode(&category); err != nil {
-		return category, errors.Wrap(utils.ErrorDecode, err.Error())
+		return category, errors.Wrap(err, utils.ErrorDecode.Error())
+	}
+
+	return category, nil
+}
+
+func (categoryRepository *categoryRepository) GetCategoryByTitle(ctx context.Context, title string) (*model.Category, error) {
+	var category *model.Category
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+
+	defer cancel()
+
+	filter := bson.M{"title": title}
+
+	result := categoryRepository.collection.FindOne(ctx, filter)
+	if result.Err() != nil {
+		return category, errors.Wrap(result.Err(), utils.ErrorExecuteQuery.Error())
+	}
+
+	if err := result.Decode(&category); err != nil {
+		return category, errors.Wrap(err, utils.ErrorDecode.Error())
 	}
 
 	return category, nil
@@ -61,11 +78,11 @@ func (categoryRepository *categoryRepository) GetAllCategories(ctx context.Conte
 
 	cursor, err := categoryRepository.collection.Find(ctx, filter)
 	if err != nil {
-		return &categories, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return &categories, errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if err = cursor.All(ctx, &categories); err != nil {
-		return &categories, errors.Wrap(utils.ErrorDecode, err.Error())
+		return &categories, errors.Wrap(err, utils.ErrorDecode.Error())
 	}
 
 	return &categories, nil
@@ -78,15 +95,15 @@ func (categoryRepository *categoryRepository) CreateCategory(ctx context.Context
 
 	result, err := categoryRepository.collection.InsertOne(ctx, category)
 	if err != nil {
-		return utils.EmptyString, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return utils.EmptyString, errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	oid, ok := result.InsertedID.(primitive.ObjectID)
-	if ok {
-		return oid.Hex(), nil
+	if !ok {
+		return utils.EmptyString, errors.Wrap(errors.New("error convert hex to oid"), utils.ErrorConvert.Error())
 	}
 
-	return utils.EmptyString, errors.Wrap(utils.ErrorConvert, "error convert oid to hex")
+	return oid.Hex(), nil
 }
 
 func (categoryRepository *categoryRepository) UpdateCategory(ctx context.Context, category *model.Category) error {
@@ -96,21 +113,21 @@ func (categoryRepository *categoryRepository) UpdateCategory(ctx context.Context
 
 	oid, err := primitive.ObjectIDFromHex(category.ID)
 	if err != nil {
-		return errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return errors.Wrap(err, utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	categoryByte, err := bson.Marshal(category)
 	if err != nil {
-		return errors.Wrap(utils.ErrorMarshal, err.Error())
+		return errors.Wrap(err, utils.ErrorMarshal.Error())
 	}
 
 	var object bson.M
 
 	err = bson.Unmarshal(categoryByte, &object)
 	if err != nil {
-		return errors.Wrap(utils.ErrorUnmarshal, err.Error())
+		return errors.Wrap(err, utils.ErrorUnmarshal.Error())
 	}
 
 	delete(object, "_id")
@@ -121,11 +138,11 @@ func (categoryRepository *categoryRepository) UpdateCategory(ctx context.Context
 
 	result, err := categoryRepository.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if result.MatchedCount == 0 {
-		return errors.Wrap(utils.ErrorExecuteQuery, "not found")
+		return errors.Wrap(errors.New("not found"), utils.ErrorExecuteQuery.Error())
 	}
 
 	return nil
@@ -138,18 +155,18 @@ func (categoryRepository *categoryRepository) DeleteCategory(ctx context.Context
 
 	oid, err := primitive.ObjectIDFromHex(uuid)
 	if err != nil {
-		return errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return errors.Wrap(errors.New("error convert hex to oid"), utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	result, err := categoryRepository.collection.DeleteOne(ctx, filter)
 	if err != nil {
-		return errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if result.DeletedCount == 0 {
-		return errors.Wrap(utils.ErrorExecuteQuery, "not found")
+		return errors.Wrap(errors.New("not found"), utils.ErrorExecuteQuery.Error())
 	}
 
 	return nil

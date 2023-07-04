@@ -33,22 +33,39 @@ func (productRepository *productRepository) GetProduct(ctx context.Context, uuid
 
 	oid, err := primitive.ObjectIDFromHex(uuid)
 	if err != nil {
-		return product, errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return product, errors.Wrap(err, utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	result := productRepository.collection.FindOne(ctx, filter)
 	if result.Err() != nil {
-		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return product, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
-		}
-
-		return product, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return product, errors.Wrap(result.Err(), utils.ErrorExecuteQuery.Error())
 	}
 
 	if err = result.Decode(&product); err != nil {
-		return product, errors.Wrap(utils.ErrorDecode, err.Error())
+		return product, errors.Wrap(err, utils.ErrorDecode.Error())
+	}
+
+	return product, nil
+}
+
+func (productRepository *productRepository) GetProductByTitle(ctx context.Context, title string) (*model.Product, error) {
+	var product *model.Product
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+
+	defer cancel()
+
+	filter := bson.M{"title": title}
+
+	result := productRepository.collection.FindOne(ctx, filter)
+	if result.Err() != nil {
+		return product, errors.Wrap(result.Err(), utils.ErrorExecuteQuery.Error())
+	}
+
+	if err := result.Decode(&product); err != nil {
+		return product, errors.Wrap(err, utils.ErrorDecode.Error())
 	}
 
 	return product, nil
@@ -61,11 +78,11 @@ func (productRepository *productRepository) GetAllProducts(ctx context.Context) 
 
 	cursor, err := productRepository.collection.Find(ctx, filter)
 	if err != nil {
-		return &products, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return &products, errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if err = cursor.All(ctx, &products); err != nil {
-		return &products, errors.Wrap(utils.ErrorDecode, err.Error())
+		return &products, errors.Wrap(err, utils.ErrorDecode.Error())
 	}
 
 	return &products, nil
@@ -78,15 +95,15 @@ func (productRepository *productRepository) CreateProduct(ctx context.Context, p
 
 	result, err := productRepository.collection.InsertOne(ctx, product)
 	if err != nil {
-		return utils.EmptyString, errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return utils.EmptyString, errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	oid, ok := result.InsertedID.(primitive.ObjectID)
-	if ok {
-		return oid.Hex(), nil
+	if !ok {
+		return utils.EmptyString, errors.Wrap(errors.New("error convert hex to oid"), utils.ErrorConvert.Error())
 	}
 
-	return utils.EmptyString, errors.Wrap(utils.ErrorConvert, "error convert oid to hex")
+	return oid.Hex(), nil
 }
 
 func (productRepository *productRepository) UpdateProduct(ctx context.Context, product *model.Product) error {
@@ -96,21 +113,21 @@ func (productRepository *productRepository) UpdateProduct(ctx context.Context, p
 
 	oid, err := primitive.ObjectIDFromHex(product.ID)
 	if err != nil {
-		return errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return errors.Wrap(err, utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	productByte, err := bson.Marshal(product)
 	if err != nil {
-		return errors.Wrap(utils.ErrorMarshal, err.Error())
+		return errors.Wrap(err, utils.ErrorMarshal.Error())
 	}
 
 	var object bson.M
 
 	err = bson.Unmarshal(productByte, &object)
 	if err != nil {
-		return errors.Wrap(utils.ErrorUnmarshal, err.Error())
+		return errors.Wrap(err, utils.ErrorUnmarshal.Error())
 	}
 
 	delete(object, "_id")
@@ -121,11 +138,11 @@ func (productRepository *productRepository) UpdateProduct(ctx context.Context, p
 
 	result, err := productRepository.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if result.MatchedCount == 0 {
-		return errors.Wrap(utils.ErrorExecuteQuery, "not found")
+		return errors.Wrap(errors.New("not found"), utils.ErrorExecuteQuery.Error())
 	}
 
 	return nil
@@ -138,18 +155,18 @@ func (productRepository *productRepository) DeleteProduct(ctx context.Context, u
 
 	oid, err := primitive.ObjectIDFromHex(uuid)
 	if err != nil {
-		return errors.Wrap(utils.ErrorConvert, "error convert hex to oid")
+		return errors.Wrap(errors.New("error convert hex to oid"), utils.ErrorConvert.Error())
 	}
 
 	filter := bson.M{"_id": oid}
 
 	result, err := productRepository.collection.DeleteOne(ctx, filter)
 	if err != nil {
-		return errors.Wrap(utils.ErrorExecuteQuery, err.Error())
+		return errors.Wrap(err, utils.ErrorExecuteQuery.Error())
 	}
 
 	if result.DeletedCount == 0 {
-		return errors.Wrap(utils.ErrorExecuteQuery, "not found")
+		return errors.Wrap(errors.New("not found"), utils.ErrorExecuteQuery.Error())
 	}
 
 	return nil

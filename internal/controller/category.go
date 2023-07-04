@@ -25,6 +25,11 @@ func (categoryController *CategoryController) CreateCategory(c echo.Context) err
 		return utils.Negotiate(c, http.StatusBadRequest, utils.ErrorBindAndValidatePayload.Error())
 	}
 
+	_, err := categoryController.categoryRepository.GetCategoryByTitle(c.Request().Context(), payload.Title)
+	if err == nil {
+		return utils.Negotiate(c, http.StatusConflict, "category with this title is exist")
+	}
+
 	createdCategoryID, err := categoryController.categoryRepository.CreateCategory(c.Request().Context(), payload.ToModel())
 	if err != nil {
 		return utils.Negotiate(c, http.StatusInternalServerError, err.Error())
@@ -49,6 +54,20 @@ func (categoryController *CategoryController) GetCategory(c echo.Context) error 
 	}
 
 	category, err := categoryController.categoryRepository.GetCategory(c.Request().Context(), id)
+	if err != nil {
+		return utils.Negotiate(c, http.StatusInternalServerError, err.Error())
+	}
+
+	return utils.Negotiate(c, http.StatusOK, category)
+}
+
+func (categoryController *CategoryController) GetCategoryByTitle(c echo.Context) error {
+	title := c.Param("title")
+	if title == "" {
+		return utils.Negotiate(c, http.StatusBadRequest, utils.ErrorGetUrlParams.Error())
+	}
+
+	category, err := categoryController.categoryRepository.GetCategoryByTitle(c.Request().Context(), title)
 	if err != nil {
 		return utils.Negotiate(c, http.StatusInternalServerError, err.Error())
 	}

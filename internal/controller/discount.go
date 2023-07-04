@@ -25,6 +25,11 @@ func (discountController *DiscountController) CreateDiscount(c echo.Context) err
 		return utils.Negotiate(c, http.StatusBadRequest, utils.ErrorBindAndValidatePayload.Error())
 	}
 
+	_, err := discountController.discountRepository.GetDiscountByTitle(c.Request().Context(), payload.Title)
+	if err == nil {
+		return utils.Negotiate(c, http.StatusConflict, "discount with this title is exist")
+	}
+
 	createdDiscountID, err := discountController.discountRepository.CreateDiscount(c.Request().Context(), payload.ToModel())
 	if err != nil {
 		return utils.Negotiate(c, http.StatusInternalServerError, err.Error())
