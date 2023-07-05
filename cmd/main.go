@@ -76,6 +76,10 @@ func Run() error {
 	categoryController := controller.NewCategoryController(categoryRepository)
 	httpecho.SetCategoryApiRoutes(httpServer.Server(), categoryController)
 
+	subcategoryRepository := mongo.NewSubcategoryRepository(db, utils.CollNameSubcategory)
+	subcategoryController := controller.NewSubcategoryController(subcategoryRepository)
+	httpecho.SetSubcategoryApiRoutes(httpServer.Server(), subcategoryController)
+
 	discountRepository := mongo.NewDiscountRepository(db, utils.CollNameDiscount)
 	discountController := controller.NewDiscountController(discountRepository)
 	httpecho.SetDiscountApiRoutes(httpServer.Server(), discountController)

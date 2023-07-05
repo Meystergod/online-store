@@ -24,6 +24,15 @@ type CategoryRepository interface {
 	DeleteCategory(ctx context.Context, uuid string) error
 }
 
+type SubcategoryRepository interface {
+	CreateSubcategory(ctx context.Context, category *model.Subcategory) (string, error)
+	GetSubcategory(ctx context.Context, uuid string) (*model.Subcategory, error)
+	GetSubcategoryByTitle(ctx context.Context, title string) (*model.Subcategory, error)
+	GetAllSubcategories(ctx context.Context) (*[]model.Subcategory, error)
+	UpdateSubcategory(ctx context.Context, subcategory *model.Subcategory) error
+	DeleteSubcategory(ctx context.Context, uuid string) error
+}
+
 type DiscountRepository interface {
 	CreateDiscount(ctx context.Context, discount *model.Discount) (string, error)
 	GetDiscount(ctx context.Context, uuid string) (*model.Discount, error)

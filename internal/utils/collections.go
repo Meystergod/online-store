@@ -1,8 +1,9 @@
 package utils
 
 const (
-	CollNameCategory = "category"
-	CollNameDiscount = "discount"
-	CollNameProduct  = "product"
-	CollNameTag      = "tag"
+	CollNameCategory    = "category"
+	CollNameSubcategory = "subcategory"
+	CollNameDiscount    = "discount"
+	CollNameProduct     = "product"
+	CollNameTag         = "tag"
 )

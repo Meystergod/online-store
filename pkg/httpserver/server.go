@@ -2,8 +2,6 @@ package httpserver
 
 import (
 	"context"
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
@@ -61,46 +59,6 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	logger.Info().Msg("shutdown http api server")
 	if err := s.echoServer.Shutdown(ctx); err != nil {
 		return errors.Wrap(err, "shudown echo server")
-	}
-
-	return nil
-}
-
-type MiddleWareFunc func(http.Handler) http.Handler
-
-func (s *Server) RegisterEndpoint(method, endpoint string, handler http.Handler, m ...MiddleWareFunc) error {
-	if handler == nil {
-		return ErrEmptyHTTPHandler
-	}
-
-	echoHandler := echo.WrapHandler(handler)
-
-	echoMiddleware := make([]echo.MiddlewareFunc, len(m))
-	for i, v := range m {
-		echoMiddleware[i] = echo.WrapMiddleware(v)
-	}
-
-	switch method {
-	case echo.GET:
-		s.echoServer.GET(endpoint, echoHandler, echoMiddleware...)
-	case echo.POST:
-		s.echoServer.POST(endpoint, echoHandler, echoMiddleware...)
-	case echo.PUT:
-		s.echoServer.PUT(endpoint, echoHandler, echoMiddleware...)
-	case echo.DELETE:
-		s.echoServer.DELETE(endpoint, echoHandler, echoMiddleware...)
-	case echo.PATCH:
-		s.echoServer.PATCH(endpoint, echoHandler, echoMiddleware...)
-	case echo.CONNECT:
-		s.echoServer.CONNECT(endpoint, echoHandler, echoMiddleware...)
-	case echo.OPTIONS:
-		s.echoServer.OPTIONS(endpoint, echoHandler, echoMiddleware...)
-	case echo.TRACE:
-		s.echoServer.TRACE(endpoint, echoHandler, echoMiddleware...)
-	case echo.HEAD:
-		s.echoServer.HEAD(endpoint, echoHandler, echoMiddleware...)
-	default:
-		return ErrUnknownHTTPMethod
 	}
 
 	return nil
